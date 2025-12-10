@@ -16,26 +16,26 @@ def run_test(name, input_text, expected_contains=None, should_fail=False):
 
         if should_fail:
             if result.returncode == 0:
-                print(f"✗ {name}: должен был завершиться ошибкой, но завершился успешно")
+                print(f"{name}: должен был завершиться ошибкой, но завершился успешно")
                 return False
             else:
-                print(f"✓ {name}: корректно завершился с ошибкой")
+                print(f"{name}: корректно завершился с ошибкой")
                 return True
         else:
             if result.returncode != 0:
-                print(f"✗ {name}: завершился с ошибкой")
+                print(f"{name}: завершился с ошибкой")
                 print(f"   Ошибка: {result.stderr.strip()}")
                 return False
 
             if expected_contains:
                 if expected_contains not in result.stdout:
-                    print(f"✗ {name}: не найден '{expected_contains}' в выводе")
+                    print(f"{name}: не найден '{expected_contains}' в выводе")
                     return False
 
-            print(f"✓ {name}: пройден")
+            print(f"{name}: пройден")
             return True
     except Exception as e:
-        print(f"✗ {name}: исключение: {e}")
+        print(f"{name}: исключение: {e}")
         return False
 
 
@@ -84,12 +84,14 @@ def test_all():
         passed += 1
 
     # Тест 5: Целые числа
+    # Тест 5: Целые числа
     total += 1
     input5 = """{
   x -> 100.
   y -> 200.
 }"""
-    if run_test("Тест 5: Целые числа", input5, "type=\"int\""):
+    # Ищем сами значения чисел без атрибута type="int"
+    if run_test("Тест 5: Целые числа", input5, "<value>100</value>"):
         passed += 1
 
     # Тест 6: Синтаксическая ошибка
@@ -164,10 +166,10 @@ var retries 3;
     # Быстрые примеры для проверки
     print("\n--- Быстрая проверка вручную ---")
     print("Пример 1:")
-    print('echo \'{ x -> 10. y -> 20.5. }\' | python3 config_parser_fixed.py')
+    print('echo \'{ x -> 10. y -> 20.5. }\' | python3 config_parser.py')
 
     print("\nПример 2:")
-    print('echo \'var max 100; { value -> ?[max]. }\' | python3 config_parser_fixed.py')
+    print('echo \'var max 100; { value -> ?[max]. }\' | python3 config_parser.py')
 
 
 if __name__ == "__main__":

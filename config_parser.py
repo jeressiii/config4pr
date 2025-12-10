@@ -35,6 +35,12 @@ class ConfigParser:
         self.skip_whitespace()
         name = self.parse_name()
         self.skip_whitespace()
+
+        # Проверяем, есть ли знак = (поддерживаем оба формата)
+        if self.current() == '=':
+            self.advance()
+            self.skip_whitespace()
+
         value = self.parse_value()
         self.skip_whitespace()
         self.consume(';')
@@ -53,12 +59,11 @@ class ConfigParser:
             value = self.parse_value()
             self.skip_whitespace()
 
-            # Точка - это разделитель пар, а не часть числа
             if self.current() == '.':
                 self.consume('.')
                 self.skip_whitespace()
-            else:
-                self.error(f"Ожидается '.', получено '{self.current()}'")
+            elif self.current() != '}':
+                self.error(f"Ожидается '.' или '}}', получено '{self.current()}'")
 
             self.result.append(f'    <pair>')
             self.result.append(f'      <name>{name}</name>')
@@ -67,6 +72,9 @@ class ConfigParser:
 
         self.consume('}')
         self.result.append('  </dictionary>')
+        self.skip_whitespace()
+        if self.pos < len(self.input) and self.current() == '.':
+            self.consume('.')
 
     def parse_value(self):
         if self.current() == '{':
@@ -92,12 +100,15 @@ class ConfigParser:
             if self.current() == '.':
                 self.consume('.')
                 self.skip_whitespace()
-            else:
-                self.error(f"Ожидается '.', получено '{self.current()}'")
+            elif self.current() != '}':
+                self.error(f"Ожидается '.' или '}}', получено '{self.current()}'")
 
             result[key] = value
 
         self.consume('}')
+        self.skip_whitespace()
+        if self.pos < len(self.input) and self.current() == '.':
+            self.consume('.')
         return result
 
     def parse_eval(self):
@@ -113,25 +124,27 @@ class ConfigParser:
 
     def parse_number(self):
         start = self.pos
-        has_dot = False
 
-        # Читаем первую цифру
+        if self.current() == '-':
+            self.advance()
+
         if not self.current().isdigit():
             self.error(f"Ожидается число, получено '{self.current()}'")
 
+        has_dot = False
         while self.pos < len(self.input):
             c = self.current()
             if c.isdigit():
                 self.advance()
             elif c == '.':
-                # Проверяем следующий символ
+                if has_dot:
+                    break
+
                 next_pos = self.pos + 1
                 if next_pos < len(self.input) and self.input[next_pos].isdigit():
-                    # Это десятичная точка в числе
                     has_dot = True
                     self.advance()
                 else:
-                    # Это конец числа, точка как разделитель
                     break
             else:
                 break
@@ -146,8 +159,8 @@ class ConfigParser:
 
     def parse_name(self):
         start = self.pos
-        if not self.current().isalpha():
-            self.error("Имя должно начинаться с буквы")
+        if not (self.current().isalpha() or self.current() == '_'):
+            self.error(f"Имя должно начинаться с буквы или '_', получено '{self.current()}'")
 
         self.advance()
         while self.pos < len(self.input):
@@ -161,11 +174,18 @@ class ConfigParser:
 
     def value_to_xml(self, value):
         if isinstance(value, dict):
-            return f'<dictionary>...</dictionary>'
+            lines = ['<dictionary>']
+            for key, val in value.items():
+                lines.append('  <pair>')
+                lines.append(f'    <name>{key}</name>')
+                lines.append(f'    <value>{self.value_to_xml(val)}</value>')
+                lines.append('  </pair>')
+            lines.append('</dictionary>')
+            return '\n'.join(lines)
         elif isinstance(value, float):
             return f'<value type="float">{value}</value>'
         else:
-            return f'<value type="int">{value}</value>'
+            return f'<value>{value}</value>'  # Изменил: без type="int" для целых чисел
 
     def current(self):
         if self.pos < len(self.input):
