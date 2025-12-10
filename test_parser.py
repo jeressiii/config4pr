@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
 import subprocess
 import tempfile
 import os
 
 
 def run_test(name, input_text, expected_contains=None, should_fail=False):
-    """Запускает тест"""
     try:
         result = subprocess.run(
             ['python3', 'config_parser.py'],
