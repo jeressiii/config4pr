@@ -165,10 +165,8 @@ var retries 3;
 
     # Быстрые примеры для проверки
     print("\n--- Быстрая проверка вручную ---")
-    print("Пример 1:")
-    print('echo \'{ x -> 10. y -> 20.5. }\' | python3 config_parser.py')
 
-    print("\nПример 2:")
+    print("\nПример:")
     print('echo \'var max 100; { value -> ?[max]. }\' | python3 config_parser.py')
 
 
